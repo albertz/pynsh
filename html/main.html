@@ -6,9 +6,15 @@ function addHtml(foo) {
 	p.innerHTML = foo;
 	document.body.appendChild(p);
 }
+
 </script>
 </head>
 <body>
 <p>Hello World</p>
+
+<div style="position:absolute; bottom:10px; left:0px; width:100%; z-index:3;">
+<input type="text" value="foo" style="width:100%; height:20px;">
+</div>
+
 </body>
 </html>
