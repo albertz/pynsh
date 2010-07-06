@@ -31,4 +31,25 @@ if False:
 
 web.page().mainFrame().evaluateJavaScript("addHtml('<a href=http://www.az2000.de>www.az2000.de</a>')")
 
+class PynshJS(QObject):
+	@pyqtSlot(str)
+	def testFunc(self, msg):
+		print "test from JS:", msg
+
+	#def testProp(self):
+	#	return sys.version
+
+	testProp = pyqtProperty(str, fget = lambda _: sys.version)
+		
+web.page().mainFrame().addToJavaScriptWindowObject("Pynsh", PynshJS())
+
+def jsEscape(s): return s.replace("\"", "&quot;")
+def javascriptString(s): return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+def simpleJsLink(jscode, title="do it"):
+	return javascriptString("<a href=\"javascript:" + jsEscape(jscode) + "\">" + title + "</a>")
+
+web.page().mainFrame().evaluateJavaScript("addHtml(" + simpleJsLink("alert(\"Hello from JS\")", "hello") + ")")
+web.page().mainFrame().evaluateJavaScript("addHtml(" + simpleJsLink("Pynsh.testFunc(Pynsh.testProp)", "test") + ")")
+
 sys.exit(app.exec_())
