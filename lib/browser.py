@@ -8,12 +8,11 @@ from PyQt4.QtWebKit import *
 app = QApplication(sys.argv)
 web = QWebView()
 
+#web.load(QUrl("http://www.az2000.de/projects/javascript-project/"))
 web.setHtml(file("html/main.html").read())
+
 web.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-
-
-def linkClicked(url): webbrowser.open(str(url.toString()))
-web.connect(web, SIGNAL("linkClicked (const QUrl&)"), linkClicked) 
+web.linkClicked.connect(lambda url: webbrowser.open(str(url.toString())))
 
 web.show()
 
@@ -35,9 +34,6 @@ class PynshJS(QObject):
 	@pyqtSlot(str)
 	def testFunc(self, msg):
 		print "test from JS:", msg
-
-	#def testProp(self):
-	#	return sys.version
 
 	testProp = pyqtProperty(str, fget = lambda _: sys.version)
 		
