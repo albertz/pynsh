@@ -7,8 +7,6 @@ from PyQt4.QtWebKit import *
 
 app = QApplication(sys.argv)
 web = QWebView()
-
-#web.load(QUrl("http://www.az2000.de/projects/javascript-project/"))
 web.setHtml(file("html/main.html").read())
 
 web.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
