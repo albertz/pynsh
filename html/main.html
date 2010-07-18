@@ -1,19 +1,125 @@
 <html>
 <head>
+<script type="text/javascript" src="jquery-1.4.2.min.js"></script>
 <script type="text/javascript">
 function addHtml(foo) {
 	var p = document.createElement("p");
 	p.innerHTML = foo;
-	document.body.appendChild(p);
+	addOutput(p);
+}
+
+function addOutput(o) {
+	var e = document.createElement("div");
+	e.appendChild(o);
+	document.body.output.appendChild(e);	
+}
+
+/*
+Pynsh interface:
+
+Pynsh.attrib(pyObjRef, name): pyObjRef
+Pynsh.call(pyObjRef, params): pyObjRef
+Pynsh.string(pyObjRef): String
+Pynsh.eval(str): pyObjRef
+
+*/
+
+py = {
+	get dir() {
+		dir = Pynsh.eval("dir");
+		return dir;
+	},
+	
+	arrayObjRef: function(pyObjRef) {
+		var obj_len = Pynsh.attrib(pyObjRef, "__len__");
+		var obj_getitem = Pynsh.attrib(pyObjRef, "__getitem__");
+	
+		var a = new Array();
+		var len = parseInt(Pynsh.string( Pynsh.call(obj_len, []) ));
+		for(var i = 0; i < len; ++i)
+			a.push( Pynsh.call(obj_getitem, [i]) );
+		return a;
+	},
+	
+	get baseObj() {
+		baseObj = Pynsh.eval("object");
+		return baseObj;
+	},
+	
+	get baseAttribs() {
+		baseAttribs = pyArrayObjRef( Pynsh.call(dir, [baseObj]) ).map( Pynsh.string );
+		return baseAttribs;
+	},
+	
+	obj: function(pyObjRef) {
+		o = function() {
+			var params = new Array();
+			for(var a in arguments) {
+				if(__pyObjRef__ in a) params.push(a.__pyObjRef__)
+				else params.push(a);
+			}
+			Pynsh.call(pyObjRef, params);
+		};
+		o.__pyObjRef__ = pyObjRef;
+		
+		for(var c in baseAttribs) {
+			o.__defineGetter__(c, function() {
+				return pyObj( Pynsh.attrib(pyObjRef, c) );
+			});
+		}
+		
+		o.get = function(name) { return Pynsh.attrib(pyObjRef, name); };
+		
+		return o;
+	}
+	
+};
+
+
+
+function HtmlObjSumm(e, pyObj) {
+	e.innerHTML = escape(pyObj.__repr__());
+};
+
+/*shinput = {
+	
+	function 
+		
+};*/
+
+function inputKeydown(self, e) {
+	//console.log("txt: " + self.value + ", pressed: " + e.keyCode);
+	switch(e.keyCode) {
+	case 13: // return
+		e.preventDefault();
+	
+		break;
+
+	case 9: // tab
+		e.preventDefault();
+		break;	
+	}
+}
+
+function updatePy(htmlObj, pyObj) { HtmlObjSumm(htmlObj, pyObj); }
+
+function updatePwdDir() { updatePy(document.getElementById("pwdDir"), py.pwd);
+	
+}
+
+function updatePwdPy() {
+	
 }
 
 </script>
 </head>
 <body>
-<p>Hello World</p>
+<div id="output"></div>
 
-<div style="position:absolute; bottom:10px; left:0px; width:100%; z-index:3;">
-<input type="text" value="foo" style="width:100%; height:20px;">
+<div style="position:absolute; bottom:30px; left:0px; width:100%; z-index:3;">
+pwd: <div id="pwdDir">foo</div><br>
+Py: <div id="pwdPy">foo</div><br>
+<input type="text" value="foo" style="width:100%; height:20px;" onkeydown="inputKeydown(this, event)">
 </div>
 
 </body>
