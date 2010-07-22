@@ -98,7 +98,13 @@ function inputKeydown(self, e) {
 	case 9: // tab
 		e.preventDefault();
 		break;	
-	}
+	}	
+}
+
+function inputKeyup(self, e) {
+	pwdPy = document.getElementById("pwdPy");
+	//document.getElementById("pwdDir").appendChild(pwdPy);
+	pwdPy.innerHTML = self.value;
 }
 
 function updatePy(htmlObj, pyObj) { HtmlObjSumm(htmlObj, pyObj); }
@@ -117,9 +123,9 @@ function updatePwdPy() {
 <div id="output"></div>
 
 <div style="position:absolute; bottom:30px; left:0px; width:100%; z-index:3;">
-pwd: <div id="pwdDir">foo</div><br>
-Py: <div id="pwdPy">foo</div><br>
-<input type="text" value="foo" style="width:100%; height:20px;" onkeydown="inputKeydown(this, event)">
+pwd: <span id="pwdDir">foo</span><br>
+Py: <span id="pwdPy">foo</span><br><br><br>
+<input type="text" value="foo" style="width:100%; height:20px;" onkeydown="inputKeydown(this, event)" onkeyup="inputKeyup(this, event)">
 </div>
 
 </body>
