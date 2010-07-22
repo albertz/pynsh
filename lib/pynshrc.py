@@ -28,9 +28,26 @@ def reloadExecDirs():
 	for d in PYNSH_OSEXEC_DIRS: loadExecDir(d)
 
 
+
+
+class HtmlRepr:	
+	def __init__(self):
+		self.components = []
+class HtmlReprEditableStr(HtmlRepr):
+	def __init__(self):
+		self.obj = None
+		self.attrib = None # obj.attrib is the string
+
 class Const:
 	def __init__(self, v=None): self.value = v
 	def __call__(self, context): return self.value
+
+class Var:
+	def __init__(self):
+		self.varname = None # varname
+	def __call__(self, context):
+		return context[self.varname]
+	def __xrepr__(self): pass
 
 class FuncCall:
 	def __init__(self):
@@ -50,7 +67,7 @@ class FuncCall:
 
 class Assignment:
 	def __init__(self):
-		self.vartuple = None # tuple/tree of varnames
+		self.vartuple = None # tuple/tree of Var
 		self.expr = None # e.g. FuncCall
 	def __call__(self, context):
 		value = self.expr(context)
@@ -58,12 +75,12 @@ class Assignment:
 	@staticmethod
 	def unpack(context, vartuple, value):
 		var = None
-		if type(vartuple) == string:
+		if type(vartuple) == Var:
 			var = vartuple
 		if len(vartuple) == 1:
 			var = vartuple[0]
 		if var != None:
-			context[var] = value
+			context[var.varname] = value
 		else:
 			if len(vartuple) != len(value):
 				raise ValueError, "need " + str(len(value)) + " values to unpack, got " + str(len(vartuple))
@@ -105,6 +122,7 @@ class Function:
 		self.variadicKArgs = None # None or varname
 		self.code = Code()
 		self.vars = [] # list of varnames
+		self.outercontext = None
 		
 	def __call__(self, *args, **kwargs):		
 		funcname = self.__name__ + "()"
@@ -136,18 +154,45 @@ class Function:
 		if len(f_more_kwargs) > 0 and not self.variadicKArgs:
 			raise TypeError, funcname + ": unknown parameters " + repr(f_more_kwargs)				
 		
-		if len(f_kwargs) < len(self.args):
-			raise TypeError, funcname + " takes at least " + str(len(self.args)) + " arguments (" + str(len(f_kwargs)) + " given)"					
+		for a in self.args:
+			if not d in f_kwargs:
+				if d in self.defaultArgValues:
+					f_kwargs[d] = self.defaultArgValues[d]
+				else:
+					raise TypeError, funcname + " takes at least " + str(len(self.args)) + " arguments (" + str(len(f_kwargs)) + " given)"					
 
-		context = f_kwargs.copy()
+		context = Context()
+		context.vars = self.vars
+		context.localscope = f_kwargs.copy()
 		if self.variadicArgs: context[self.variadicArgs] = f_more_args
 		if self.variadicKArgs: context[self.variadicKArgs] = f_more_kwargs
+		context.outercontext = self.outercontext
 		
 		return self.code(context)
 
 class NoOp: # alias 'pass'
 	def __call__(self, context): pass
 
+class Context:
+	def __init__(self):
+		self.vars = []
+		self.localscope = {}
+		self.outercontext = None
+	def __contains__(self, key):
+		if key in self.localscope: return True
+		if self.outercontext != None: return key in self.outercontext
+		return False
+	def __getitem__(self, key):
+		if key in self.localscope: return self.localscope[key]
+		if self.outercontext != None:
+			if key in self.outercontext: return self.outercontext[key]
+		if key in self.vars:
+			raise UnboundLocalError, "local variable '" + key + "' referenced before assignment"
+		else:
+			raise UnboundLocalError, "variable '" + key + "' unknown"
+	def __setitem__(self, key, value):
+		self.localscope[key] = value
+		
 class Code:
 	def __init__(self):
 		self.cmds = None # iterable of commands (which have __call__(self, context))
@@ -159,6 +204,7 @@ class Code:
 			except Exception as e:
 				print e
 		return ret
+
 
 def locals():
 	return {}
