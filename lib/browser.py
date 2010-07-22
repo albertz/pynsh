@@ -38,12 +38,15 @@ class PynshJS(QObject):
 web.page().mainFrame().addToJavaScriptWindowObject("Pynsh", PynshJS())
 
 def jsEscape(s): return s.replace("\"", "&quot;")
-def javascriptString(s): return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+def jsString(s): return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 def simpleJsLink(jscode, title="do it"):
-	return javascriptString("<a href=\"javascript:" + jsEscape(jscode) + "\">" + title + "</a>")
+	return jsString("<a href=\"javascript:" + jsEscape(jscode) + "\">" + title + "</a>")
 
-web.page().mainFrame().evaluateJavaScript("addHtml(" + simpleJsLink("alert(\"Hello from JS\")", "hello") + ")")
-web.page().mainFrame().evaluateJavaScript("addHtml(" + simpleJsLink("Pynsh.testFunc(Pynsh.testProp)", "test") + ")")
+jsCall = web.page().mainFrame().evaluateJavaScript
+
+jsCall("addHtml(" + simpleJsLink("alert(\"Hello from JS\")", "hello") + ")")
+jsCall("addHtml(" + simpleJsLink("Pynsh.testFunc(Pynsh.testProp)", "test") + ")")
+
 
 sys.exit(app.exec_())

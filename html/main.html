@@ -17,10 +17,10 @@ function addOutput(o) {
 /*
 Pynsh interface:
 
-Pynsh.attrib(pyObjRef, name): pyObjRef
-Pynsh.call(pyObjRef, params): pyObjRef
-Pynsh.string(pyObjRef): String
-Pynsh.eval(str): pyObjRef
+Pynsh.attrib(pyObjId, name): pyObjId
+Pynsh.call(pyObjId, params): pyObjId
+Pynsh.string(pyObjId): String
+Pynsh.eval(str): pyObjId
 
 */
 
@@ -51,8 +51,8 @@ py = {
 		return baseAttribs;
 	},
 	
-	obj: function(pyObjRef) {
-		o = function() {
+	__newObj: function(pyObjRef) {
+		var o = function() {
 			var params = new Array();
 			for(var a in arguments) {
 				if(__pyObjRef__ in a) params.push(a.__pyObjRef__)
@@ -62,15 +62,23 @@ py = {
 		};
 		o.__pyObjRef__ = pyObjRef;
 		
-		for(var c in baseAttribs) {
+		for(var c in pyArrayObjRef( Pynsh.call(dir, [pyObjRef]) ).map( Pynsh.string )) {
 			o.__defineGetter__(c, function() {
-				return pyObj( Pynsh.attrib(pyObjRef, c) );
+				return obj( Pynsh.attrib(pyObjRef, c) );
 			});
 		}
 		
 		o.get = function(name) { return Pynsh.attrib(pyObjRef, name); };
-		
+
+		__objRefs[pyObjRef] = o;
 		return o;
+	},
+	
+	__objRefs = {},
+	
+	obj: function(pyObjRef) {
+		if(pyObjRef in __objRefs) return __objRefs[pyObjRef];
+		return __newObj(pyObjRef);
 	}
 	
 };
@@ -103,8 +111,10 @@ function inputKeydown(self, e) {
 
 function inputKeyup(self, e) {
 	pwdPy = document.getElementById("pwdPy");
-	//document.getElementById("pwdDir").appendChild(pwdPy);
+	pwdDir = document.getElementById("pwdDir"); 
+	//pwdDir.appendChild(pwdPy);
 	pwdPy.innerHTML = self.value;
+	pwdDir.innerHTML = id(pwdPy);
 }
 
 function updatePy(htmlObj, pyObj) { HtmlObjSumm(htmlObj, pyObj); }
@@ -115,6 +125,34 @@ function updatePwdDir() { updatePy(document.getElementById("pwdDir"), py.pwd);
 
 function updatePwdPy() {
 	
+}
+
+// save to call from everywhere
+// is called from Py code by HtmlRefs.syncPyToHtml
+function syncPyToHtml(htmlId, pyObjId) {
+	
+}
+
+// don't call this from JS code manually!
+// it is called from Py code by HtmlRefs.addHtml
+function __addHtmlPyNode(newHtmlId, pyObjId, htmlParentId) {
+	var parentNode;
+	
+	if(htmlParentId != "") {
+		parentNode = document.getElementById(htmlParentId);
+		if(parentNode == null)
+			throw "Error, " + htmlParentId + " not found";
+	}
+	else
+		parentNode = document;	
+
+	var e = document.createElement("div");
+	e.style.display = "inline";
+	e.id = newHtmlId;
+	e.pyObjId = pyObjId;
+	parent.appendChild(e);
+	
+	syncPyToHtml(newHtmlId, pyObjId);
 }
 
 </script>

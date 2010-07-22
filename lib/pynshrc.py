@@ -29,7 +29,41 @@ def reloadExecDirs():
 
 
 
+class HtmlRefs:
+	import browser
+	
+	htmlFromPyId = {} # Python id -> list( html id )
+	pyFromPyId = {} # Python id -> Python obj
+	pyFromHtmlId = {} # html id -> Python obj
 
+	@staticmethod
+	def syncPyToHtml(pyObj, htmlId = None):
+		if htmlId == None:
+			if id(pyObj) in htmlFromPyId:
+				for h in htmlFromPyId[id(pyObj)]:
+					syncPyToHtml(pyObj, h)
+			return		
+		browser.jsCall("syncPyToHtml(" + browser.jsString(htmlId) + "," + str(id(pyObj)) + ")")
+
+	@staticmethod
+	def addHtml(pyObj, htmlParentId = ""):
+		if not id(pyObj) in htmlFromPyId:
+			htmlFromPyId[id(pyObj)] = []
+		htmlIds = htmlFromPyId[id(pyObj)]
+		if len(htmlIds) == 0:
+			refnum = 0
+		else:
+			lastrefnum = int(htmlIds[-1].split("-")[2])
+			refnum = lastrefnum + 1
+		htmlId = "py-" + str(id(pyObj)) + "-" + str(refnum)
+		htmlIds += [ htmlId ]
+		pyFromPyId[id(pyObj)] = pyObj
+		browser.jsCall("__addHtmlPyNode(" +
+					   browser.jsString(htmlId) + "," +
+					   str(id(pyObj)) + "," +
+					   browser.jsString(htmlParentId) + ")")
+		return htmlId
+	
 class HtmlRepr:	
 	def __init__(self):
 		self.components = []
